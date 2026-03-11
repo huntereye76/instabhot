@@ -1,155 +1,7 @@
-# import re
-# import os
-# import time
-# import asyncio
-# import yt_dlp
-# from collections import defaultdict
-# from telegram import Update
-# from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
-
-# BOT_TOKEN = os.getenv("BOT_TOKEN")
-
-# # Allowed groups
-# ALLOWED_GROUPS = [
-#     -1003729614541
-# ]
-
-# GROUP_LINK = "https://t.me/yourgroup"
-
-# # Rate limit per user
-# RATE_LIMIT = 5
-
-# last_request = defaultdict(float)
-
-# # Safe queue with limit
-# download_queue = asyncio.Queue(maxsize=20)
-
-
-# # DM start message
-# async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-#     if update.effective_chat.type == "private":
-
-#         await update.message.reply_text(
-#             f"This bot works only in groups.\n\n"
-#             f"Join the group and send Instagram reel links:\n{GROUP_LINK}"
-#         )
-
-
-# # Handle messages
-# async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-#     chat_id = update.effective_chat.id
-#     user_id = update.effective_user.id
-#     text = update.message.text or ""
-
-#     if chat_id not in ALLOWED_GROUPS:
-#         return
-
-#     match = re.search(r"https://www\.instagram\.com/reel/[A-Za-z0-9_-]+", text)
-
-#     if not match:
-#         return
-
-#     now = time.time()
-
-#     if now - last_request[user_id] < RATE_LIMIT:
-#         await update.message.reply_text("Please wait before sending another link.")
-#         return
-
-#     last_request[user_id] = now
-
-#     if download_queue.full():
-#         await update.message.reply_text("Queue full. Try again later.")
-#         return
-
-#     url = match.group(0)
-
-#     await download_queue.put((update, context, url))
-
-#     position = download_queue.qsize()
-
-#     await update.message.reply_text(
-#         f"Added to queue.\nPosition: {position}"
-#     )
-
-
-# # Worker
-# async def worker(worker_id):
-
-#     while True:
-
-#         update, context, url = await download_queue.get()
-
-#         filename = f"video_{worker_id}.mp4"
-
-#         try:
-
-#             await update.message.reply_text(
-#                 f"Worker {worker_id} downloading..."
-#             )
-
-#             ydl_opts = {
-#                 "outtmpl": filename,
-#                 "format": "mp4",
-#                 "cookiefile": "cookies.txt",
-#                 "max_filesize": 50 * 1024 * 1024,
-#                 "quiet": True
-#             }
-
-#             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-#                 ydl.download([url])
-
-#             await update.message.reply_video(
-#                 video=open(filename, "rb")
-#             )
-
-#             os.remove(filename)
-
-#             # small delay to avoid instagram rate-limit
-#             await asyncio.sleep(2)
-
-#         except Exception as e:
-
-#             await update.message.reply_text(
-#                 "Failed to download this reel."
-#             )
-
-#         finally:
-
-#             download_queue.task_done()
-
-
-# # Create bot
-# app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-# app.add_handler(CommandHandler("start", start))
-# app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
-
-
-# async def start_workers():
-#     asyncio.create_task(worker(1))
-#     asyncio.create_task(worker(2))
-#     asyncio.create_task(worker(3))
-
-
-# async def post_init(application):
-#     await start_workers()
-
-
-# app.post_init = post_init
-
-
-# if __name__ == "__main__":
-#     app.run_polling()
-
-
-
 import re
 import os
 import time
 import asyncio
-import requests
 import yt_dlp
 from collections import defaultdict
 from telegram import Update
@@ -162,48 +14,26 @@ ALLOWED_GROUPS = [
     -1003729614541
 ]
 
-GROUP_LINK = "https://t.me/yourgroup"
+GROUP_LINK = "https://t.me/International_BF_GF_chatting"
 
 # Rate limit per user
-RATE_LIMIT = 60
+RATE_LIMIT = 10
 
 last_request = defaultdict(float)
 
-# Safe queue
-download_queue = asyncio.Queue(maxsize=30)
+# Safe queue with limit
+download_queue = asyncio.Queue(maxsize=20)
 
 
-# START command
+# DM start message
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if update.effective_chat.type == "private":
 
         await update.message.reply_text(
             f"This bot works only in groups.\n\n"
-            f"Join here:\n{GROUP_LINK}"
+            f"Join the group and send Instagram reel links:\n{GROUP_LINK}"
         )
-
-
-# Extract direct reel video
-def get_reel_video_url(reel_url):
-
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-
-    embed_url = reel_url.rstrip("/") + "/embed/captioned/"
-
-    r = requests.get(embed_url, headers=headers)
-
-    if r.status_code != 200:
-        return None
-
-    match = re.search(r'"video_url":"([^"]+)"', r.text)
-
-    if not match:
-        return None
-
-    return match.group(1).replace("\\u0026", "&")
 
 
 # Handle messages
@@ -230,7 +60,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_request[user_id] = now
 
     if download_queue.full():
-        await update.message.reply_text("Queue full. Try later.")
+        await update.message.reply_text("Queue full. Try again later.")
         return
 
     url = match.group(0)
@@ -259,29 +89,16 @@ async def worker(worker_id):
                 f"Worker {worker_id} downloading..."
             )
 
-            video_url = get_reel_video_url(url)
+            ydl_opts = {
+                "outtmpl": filename,
+                "format": "mp4",
+                "cookiefile": "cookies.txt",
+                "max_filesize": 50 * 1024 * 1024,
+                "quiet": True
+            }
 
-            # Direct download (fast)
-            if video_url:
-
-                r = requests.get(video_url, stream=True)
-
-                with open(filename, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-
-            else:
-                # fallback to yt-dlp
-                ydl_opts = {
-                    "outtmpl": filename,
-                    "format": "best[ext=mp4]",
-                    "quiet": True,
-                    "noplaylist": True
-                }
-
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
 
             await update.message.reply_video(
                 video=open(filename, "rb")
@@ -289,9 +106,10 @@ async def worker(worker_id):
 
             os.remove(filename)
 
-            await asyncio.sleep(1)
+            # small delay to avoid instagram rate-limit
+            await asyncio.sleep(2)
 
-        except Exception:
+        except Exception as e:
 
             await update.message.reply_text(
                 "Failed to download this reel."
@@ -302,7 +120,7 @@ async def worker(worker_id):
             download_queue.task_done()
 
 
-# Build bot
+# Create bot
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
@@ -310,8 +128,9 @@ app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message
 
 
 async def start_workers():
-    for i in range(1, 6):
-        asyncio.create_task(worker(i))
+    asyncio.create_task(worker(1))
+    asyncio.create_task(worker(2))
+    asyncio.create_task(worker(3))
 
 
 async def post_init(application):
@@ -323,3 +142,184 @@ app.post_init = post_init
 
 if __name__ == "__main__":
     app.run_polling()
+
+
+
+# import re
+# import os
+# import time
+# import asyncio
+# import requests
+# import yt_dlp
+# from collections import defaultdict
+# from telegram import Update
+# from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
+
+# BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+# # Allowed groups
+# ALLOWED_GROUPS = [
+#     -1003729614541
+# ]
+
+# GROUP_LINK = "https://t.me/yourgroup"
+
+# # Rate limit per user
+# RATE_LIMIT = 60
+
+# last_request = defaultdict(float)
+
+# # Safe queue
+# download_queue = asyncio.Queue(maxsize=30)
+
+
+# # START command
+# async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+#     if update.effective_chat.type == "private":
+
+#         await update.message.reply_text(
+#             f"This bot works only in groups.\n\n"
+#             f"Join here:\n{GROUP_LINK}"
+#         )
+
+
+# # Extract direct reel video
+# def get_reel_video_url(reel_url):
+
+#     headers = {
+#         "User-Agent": "Mozilla/5.0"
+#     }
+
+#     embed_url = reel_url.rstrip("/") + "/embed/captioned/"
+
+#     r = requests.get(embed_url, headers=headers)
+
+#     if r.status_code != 200:
+#         return None
+
+#     match = re.search(r'"video_url":"([^"]+)"', r.text)
+
+#     if not match:
+#         return None
+
+#     return match.group(1).replace("\\u0026", "&")
+
+
+# # Handle messages
+# async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+#     chat_id = update.effective_chat.id
+#     user_id = update.effective_user.id
+#     text = update.message.text or ""
+
+#     if chat_id not in ALLOWED_GROUPS:
+#         return
+
+#     match = re.search(r"https://www\.instagram\.com/reel/[A-Za-z0-9_-]+", text)
+
+#     if not match:
+#         return
+
+#     now = time.time()
+
+#     if now - last_request[user_id] < RATE_LIMIT:
+#         await update.message.reply_text("Please wait before sending another link.")
+#         return
+
+#     last_request[user_id] = now
+
+#     if download_queue.full():
+#         await update.message.reply_text("Queue full. Try later.")
+#         return
+
+#     url = match.group(0)
+
+#     await download_queue.put((update, context, url))
+
+#     position = download_queue.qsize()
+
+#     await update.message.reply_text(
+#         f"Added to queue.\nPosition: {position}"
+#     )
+
+
+# # Worker
+# async def worker(worker_id):
+
+#     while True:
+
+#         update, context, url = await download_queue.get()
+
+#         filename = f"video_{worker_id}.mp4"
+
+#         try:
+
+#             await update.message.reply_text(
+#                 f"Worker {worker_id} downloading..."
+#             )
+
+#             video_url = get_reel_video_url(url)
+
+#             # Direct download (fast)
+#             if video_url:
+
+#                 r = requests.get(video_url, stream=True)
+
+#                 with open(filename, "wb") as f:
+#                     for chunk in r.iter_content(chunk_size=8192):
+#                         if chunk:
+#                             f.write(chunk)
+
+#             else:
+#                 # fallback to yt-dlp
+#                 ydl_opts = {
+#                     "outtmpl": filename,
+#                     "format": "best[ext=mp4]",
+#                     "quiet": True,
+#                     "noplaylist": True
+#                 }
+
+#                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#                     ydl.download([url])
+
+#             await update.message.reply_video(
+#                 video=open(filename, "rb")
+#             )
+
+#             os.remove(filename)
+
+#             await asyncio.sleep(1)
+
+#         except Exception:
+
+#             await update.message.reply_text(
+#                 "Failed to download this reel."
+#             )
+
+#         finally:
+
+#             download_queue.task_done()
+
+
+# # Build bot
+# app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+# app.add_handler(CommandHandler("start", start))
+# app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+
+
+# async def start_workers():
+#     for i in range(1, 6):
+#         asyncio.create_task(worker(i))
+
+
+# async def post_init(application):
+#     await start_workers()
+
+
+# app.post_init = post_init
+
+
+# if __name__ == "__main__":
+#     app.run_polling()
