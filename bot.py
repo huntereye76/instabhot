@@ -115,19 +115,26 @@ async def worker(worker_id):
             download_queue.task_done()
 
 
-async def main():
+# import asyncio
 
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
 
-    # Start 3 workers
+
+async def start_workers():
     asyncio.create_task(worker(1))
     asyncio.create_task(worker(2))
     asyncio.create_task(worker(3))
 
-    await app.run_polling()
+
+async def post_init(application):
+    await start_workers()
 
 
-asyncio.run(main())
+app.post_init = post_init
+
+
+if __name__ == "__main__":
+    app.run_polling()
