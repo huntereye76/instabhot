@@ -11,7 +11,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Allowed groups
 ALLOWED_GROUPS = [
-    -1003888705621,  # replace with your group ID
+    -1003729614541,  # replace with your group ID
 ]
 
 GROUP_LINK = "https://t.me/yourgroup"
