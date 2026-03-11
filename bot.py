@@ -167,7 +167,7 @@ ALLOWED_GROUPS = [
 GROUP_LINK = "https://t.me/yourgroup"
 
 # Rate limit per user
-RATE_LIMIT = 60
+RATE_LIMIT = 10
 
 last_request = defaultdict(float)
 
